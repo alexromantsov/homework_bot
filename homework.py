@@ -72,7 +72,6 @@ def check_tokens():
     Проверяем доступность переменных окружения,
     которые необходимы для работы программы
     """
-
     name_tokens = {
         'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
         'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
