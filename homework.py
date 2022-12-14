@@ -1,4 +1,3 @@
-import datetime
 import os
 import logging
 import time
@@ -34,31 +33,37 @@ logging.basicConfig(
 
 class EndpointError(Exception):
     """Когда API домашки возвращает код, отличный от 200"""
+
     pass
 
 
 class LackExpectedKeys(Exception):
     """Отсутствие ожидаемых ключей в ответе API"""
+
     pass
 
 
 class EmptyDictionary(Exception):
     """Пришел пустой словарь."""
+
     pass
 
 
 class UnexpectedHomeworkStatus(Exception):
     """Получили неожиданный статус домашней работы"""
+
     pass
 
 
 class WrongFormat(TypeError):
     """Структура данных не соответствует ожиданиям"""
+
     pass
 
 
 class ExpectedStatuses(Exception):
     """Недокументированный статус домашней работы"""
+
     pass
 
 
@@ -97,8 +102,8 @@ def get_api_answer(timestamp):
         homework_statuses = requests.get(
             ENDPOINT,
             headers=HEADERS,
-            params={'from_date': 1670594662},  # 1549962000 - Время для отладки
-        )                                       # 1670594662
+            params={'from_date': timestamp},  # 1549962000 - Время для отладки
+        )  # 1670594662
     except Exception as error:
         logging.error(f'Ошибка при запросе к основному API: {error}')
     if homework_statuses.status_code != 200:
