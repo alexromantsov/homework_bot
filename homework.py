@@ -68,7 +68,8 @@ class ExpectedStatuses(Exception):
 
 
 def check_tokens():
-    """Проверяем доступность переменных окружения,
+    """
+    Проверяем доступность переменных окружения,
     которые необходимы для работы программы
     """
 
@@ -86,7 +87,6 @@ def check_tokens():
 
 def send_message(bot, message):
     """Отправляем сообщения в Telegram чат."""
-
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.debug(
@@ -98,7 +98,7 @@ def send_message(bot, message):
 
 def get_api_answer(timestamp):
     """Делаем запрос к единственному эндпоинту API-сервиса."""
-
+    homework_statuses = None
     try:
         homework_statuses = requests.get(
             ENDPOINT,
@@ -119,7 +119,6 @@ def get_api_answer(timestamp):
 
 def check_response(response):
     """Проверяет ответ API на соответствие документации."""
-
     try:
         homework = response['homeworks']
     except KeyError as error:
@@ -130,7 +129,7 @@ def check_response(response):
         raise LackExpectedKeys(message)
     if homework is None:
         message = (
-            f'Получен пустой ответ от API'
+            'Получен пустой ответ от API'
         )
         logger.error(message)
         raise LackExpectedKeys(message)
@@ -145,8 +144,7 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Извлекает статус работы"""
-
+    """Извлекает статус работы."""
     try:
         status = homework['status']
         homework_name = homework['homework_name']
@@ -157,7 +155,7 @@ def parse_status(homework):
         logger.error(message)
         raise KeyError(message)
 
-    if not status in HOMEWORK_VERDICTS:
+    if status not in HOMEWORK_VERDICTS:
         message = 'Недокументированный статус домашней работы'
         logger.error(message)
         raise ExpectedStatuses(message)
