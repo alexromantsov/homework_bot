@@ -32,13 +32,13 @@ logging.basicConfig(
 
 
 class EndpointError(Exception):
-    """Когда API домашки возвращает код, отличный от 200"""
+    """Когда API домашки возвращает код, отличный от 200."""
 
     pass
 
 
 class LackExpectedKeys(Exception):
-    """Отсутствие ожидаемых ключей в ответе API"""
+    """Отсутствие ожидаемых ключей в ответе API."""
 
     pass
 
@@ -50,26 +50,27 @@ class EmptyDictionary(Exception):
 
 
 class UnexpectedHomeworkStatus(Exception):
-    """Получили неожиданный статус домашней работы"""
+    """Получили неожиданный статус домашней работы."""
 
     pass
 
 
 class WrongFormat(TypeError):
-    """Структура данных не соответствует ожиданиям"""
+    """Структура данных не соответствует ожиданиям."""
 
     pass
 
 
 class ExpectedStatuses(Exception):
-    """Недокументированный статус домашней работы"""
+    """Недокументированный статус домашней работы."""
 
     pass
 
 
 def check_tokens():
     """Проверяем доступность переменных окружения,
-    которые необходимы для работы программы"""
+    которые необходимы для работы программы
+    """
 
     name_tokens = {
         'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
@@ -84,7 +85,7 @@ def check_tokens():
 
 
 def send_message(bot, message):
-    """Отправляем сообщения в Telegram чат"""
+    """Отправляем сообщения в Telegram чат."""
 
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
