@@ -38,10 +38,9 @@ logger.addHandler(handler)
 
 
 def check_tokens() -> bool:
-    """Проверяем доступность переменных окружения,
-    которые необходимы для работы программы.
+    """Проверяем доступность переменных окружения.
+    Которые необходимы для работы программы.
     """
-
     return all((PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID))
 
 
@@ -86,13 +85,13 @@ def check_response(response):
         homework = response['homeworks']
     else:
         message = (
-            f'Ключ homeworks отсутствует при получения ответа от API '
+            'Ключ homeworks отсутствует при получения ответа от API '
         )
         raise TypeError(message)
 
     if 'current_date' not in response:
         message = (
-            f'Ключ current_date отсутствует при получения ответа от API '
+            'Ключ current_date отсутствует при получения ответа от API '
         )
         raise TypeError(message)
     if homework is None:
@@ -108,7 +107,7 @@ def parse_status(homework):
     """Извлекает статус работы."""
     if not homework:
         message = (
-            f'Список с домишками пуст'
+            'Список с домишками пуст'
         )
         raise TypeError(message)
     else:
@@ -116,14 +115,14 @@ def parse_status(homework):
             status = homework['status']
         else:
             message = (
-                f'Ключ status отсутствует при получения ответа от API '
+                'Ключ status отсутствует при получения ответа от API '
             )
             raise KeyError(message)
         if 'homework_name' in homework:
             homework_name = homework['homework_name']
         else:
             message = (
-                f'Ключ homework_name отсутствует при получения ответа от API '
+                'Ключ homework_name отсутствует при получения ответа от API '
             )
             raise KeyError(message)
 
