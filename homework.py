@@ -1,5 +1,6 @@
 import os
 import logging
+import sys
 import time
 
 import telegram
@@ -58,18 +59,22 @@ def send_message(bot, message):
 
 def get_api_answer(timestamp):
     """Делаем запрос к единственному эндпоинту API-сервиса."""
-    homework_statuses = None
+    timestamp = timestamp or int(time.time())
     try:
         homework_statuses = requests.get(
             ENDPOINT,
             headers=HEADERS,
             params={'from_date': timestamp},  # 1549962000 - Время для отладки
         )                                       # 1670594662
-        # homework_statuses.raise_for_status()
-    except requests.exceptions.HTTPError as error:
-        logger.error(f'Ответ API: {error}')
+        homework_statuses.json()
     except requests.RequestException as error:
-        logging.error(f'Ошибка при запросе к основному API: {error}')
+        raise EndpointError(
+            f'Ошибка при запросе к основному API: {error}'
+        )
+    except requests.exceptions.JSONDecodeError as error:
+        raise EndpointError(
+            f'JSON отправил ошибку: {error}'
+        )
     if homework_statuses.status_code != 200:
         message = (
             f'Эндпоинт {ENDPOINT} недоступен. '
@@ -81,24 +86,22 @@ def get_api_answer(timestamp):
 
 def check_response(response):
     """Проверяет ответ API на соответствие документации."""
-    if 'homeworks' in response:
-        homework = response['homeworks']
-    else:
+    if 'homeworks' not in response:
         message = (
             'Ключ homeworks отсутствует при получения ответа от API '
         )
         raise TypeError(message)
-
     if 'current_date' not in response:
         message = (
             'Ключ current_date отсутствует при получения ответа от API '
         )
         raise TypeError(message)
-    if homework is None:
-        raise ValueError('Получен пустой ответ от API')
+    if type(response['current_date']) != int:
+        raise TypeError('current_date не является числом.')
+
+    homework = response['homeworks']
     if not isinstance(homework, list):
         message = 'В ответе API домашки представлены не списком'
-        logger.error(message)
         raise WrongFormatError(message)
     return homework
 
@@ -111,21 +114,20 @@ def parse_status(homework):
         )
         raise TypeError(message)
     else:
-        if 'status' in homework:
-            status = homework['status']
-        else:
+        if 'status' not in homework:
             message = (
                 'Ключ status отсутствует при получения ответа от API '
             )
             raise KeyError(message)
-        if 'homework_name' in homework:
-            homework_name = homework['homework_name']
-        else:
+
+        if 'homework_name' not in homework:
             message = (
                 'Ключ homework_name отсутствует при получения ответа от API '
             )
             raise KeyError(message)
 
+    status = homework['status']
+    homework_name = homework['homework_name']
     if status not in HOMEWORK_VERDICTS:
         message = 'Недокументированный статус домашней работы'
         logger.error(message)
@@ -138,7 +140,7 @@ def main():
     """Основная логика работы бота."""
     if not check_tokens():
         logger.critical('Отсутствует обязательный TOKEN или ID.')
-        exit()
+        sys.exit()
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
@@ -147,28 +149,18 @@ def main():
     while True:
         try:
             response = get_api_answer(timestamp)
+            homework = check_response(response)
+            message = parse_status(homework[0])
+            if status_work is None:
+                send_message(bot, message)
+                status_work = homework[0]['status']
         except EndpointError as error_response:
             send_message(bot, error_response)
             logger.error(error_response)
-        else:
-            try:
-                homework = check_response(response)
-                message = parse_status(homework[0])
-                if status_work is None:
-                    send_message(bot, message)
-                    status_work = homework[0]['status']
-            except TypeError as error:
-                message = f'Сбой в работе программы: {error}'
-                send_message(bot, message)
-                logger.error(message)
-            except ValueError as error:
-                message = f'Сбой в работе программы: {error}'
-                send_message(bot, message)
-                logger.error(message)
-            except Exception as error:
-                message = f'Сбой в работе программы: {error}'
-                send_message(bot, message)
-                logger.error(message)
+        except Exception as error:
+            message = f'Сбой в работе программы: {error}'
+            send_message(bot, message)
+            logger.error(message)
         finally:
             time.sleep(RETRY_PERIOD)
 
