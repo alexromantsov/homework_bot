@@ -69,7 +69,7 @@ def get_api_answer(timestamp):
                 f'StatusCode: {homework_statuses.status_code}')
             raise EndpointError(message)
         return homework_statuses.json()
-    except requests.exceptions.JSONDecodeError as error:
+    except ValueError as error:
         raise EndpointError(
             f'JSON отправил ошибку: {error}'
         )
@@ -103,11 +103,6 @@ def check_response(response):
 
 def parse_status(homework):
     """Извлекает статус работы."""
-    if not homework:
-        message = (
-            'Словарь с домишками пуст'
-        )
-        raise TypeError(message)
     if 'status' not in homework:
         message = (
             'Ключ status отсутствует при получения ответа от API '
@@ -123,8 +118,8 @@ def parse_status(homework):
     status = homework['status']
     homework_name = homework['homework_name']
     if status not in HOMEWORK_VERDICTS:
-        message = 'Недокументированный статус домашней работы'
-        raise SystemError(message)
+        message = f'Недокументированный статус домашней работы - {status}'
+        raise ValueError(message)
     verdict = HOMEWORK_VERDICTS[status]
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
@@ -136,7 +131,7 @@ def main():
         sys.exit()
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    timestamp = int(time.time()) - RETRY_PERIOD
+    timestamp = int(time.time())
     status_work = None
 
     while True:
@@ -148,9 +143,12 @@ def main():
                 if status_work is None:
                     send_message(bot, message)
                     status_work = homework[0]['status']
+                elif status_work != homework[0]['status']:
+                    send_message(bot, message)
+                    status_work = homework[0]['status']
             else:
                 logger.debug('Отсутствуют новые статусы')
-        except KeyError as error:
+        except TypeError as error:
             logger.error(error)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
@@ -158,6 +156,7 @@ def main():
             logger.error(message)
         finally:
             time.sleep(RETRY_PERIOD)
+
 
 
 if __name__ == '__main__':
