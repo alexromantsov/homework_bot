@@ -6,8 +6,9 @@ import time
 import telegram
 import requests
 from dotenv import load_dotenv
+from json.decoder import JSONDecodeError
 
-from exceptions import (EndpointError, WrongFormatError)
+from exceptions import EndpointError
 
 load_dotenv()
 
@@ -69,7 +70,7 @@ def get_api_answer(timestamp):
                 f'StatusCode: {homework_statuses.status_code}')
             raise EndpointError(message)
         return homework_statuses.json()
-    except ValueError as error:
+    except JSONDecodeError as error:
         raise EndpointError(
             f'JSON отправил ошибку: {error}'
         )
@@ -85,7 +86,7 @@ def check_response(response):
         message = (
             'Ключ homeworks отсутствует при получения ответа от API '
         )
-        raise WrongFormatError(message)
+        raise TypeError(message)
     if 'current_date' not in response:
         message = (
             'Ключ current_date отсутствует при получения ответа от API '
@@ -132,7 +133,8 @@ def main():
 
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
-    status_work = None
+    first_message = None
+    first_message_error = None
 
     while True:
         try:
@@ -140,20 +142,17 @@ def main():
             homework = check_response(response)
             if len(homework) > 0:
                 message = parse_status(homework[0])
-                if status_work is None:
+                if message != first_message:
                     send_message(bot, message)
-                    status_work = homework[0]['status']
-                elif status_work != homework[0]['status']:
-                    send_message(bot, message)
-                    status_work = homework[0]['status']
+                first_message = message
             else:
                 logger.debug('Отсутствуют новые статусы')
-        except TypeError as error:
-            logger.error(error)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            send_message(bot, message)
-            logger.error(message)
+            if message != first_message_error:
+                send_message(bot, message)
+                logger.error(message)
+            first_message_error = message
         finally:
             time.sleep(RETRY_PERIOD)
 
