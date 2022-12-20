@@ -6,9 +6,8 @@ import time
 import telegram
 import requests
 from dotenv import load_dotenv
-from json.decoder import JSONDecodeError
 
-from exceptions import EndpointError
+from exceptions import EndpointError, IncorrectAnswerAPI
 
 load_dotenv()
 
@@ -70,7 +69,7 @@ def get_api_answer(timestamp):
                 f'StatusCode: {homework_statuses.status_code}')
             raise EndpointError(message)
         return homework_statuses.json()
-    except JSONDecodeError as error:
+    except requests.InvalidJSONError as error:
         raise EndpointError(
             f'JSON отправил ошибку: {error}'
         )
@@ -82,19 +81,21 @@ def get_api_answer(timestamp):
 
 def check_response(response):
     """Проверяет ответ API на соответствие документации."""
+    if not isinstance(response, dict):
+        message = 'В ответе API домашки представлены не словарем'
+        raise TypeError(message)
     if 'homeworks' not in response:
         message = (
             'Ключ homeworks отсутствует при получения ответа от API '
         )
-        raise TypeError(message)
+        raise IncorrectAnswerAPI(message)
     if 'current_date' not in response:
         message = (
             'Ключ current_date отсутствует при получения ответа от API '
         )
-        raise TypeError(message)
-    if type(response['current_date']) != int:
+        raise IncorrectAnswerAPI(message)
+    if not isinstance(response['current_date'], int):
         raise TypeError('current_date не является числом.')
-
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
         message = 'В ответе API домашки представлены не списком'
@@ -134,7 +135,6 @@ def main():
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     timestamp = int(time.time())
     first_message = None
-    first_message_error = None
 
     while True:
         try:
@@ -147,12 +147,15 @@ def main():
                 first_message = message
             else:
                 logger.debug('Отсутствуют новые статусы')
+        except IncorrectAnswerAPI as error:
+            message = f'Сбой в работе программы: {error}'
+            logger.error(message)
         except Exception as error:
             message = f'Сбой в работе программы: {error}'
-            if message != first_message_error:
+            if message != first_message:
                 send_message(bot, message)
                 logger.error(message)
-            first_message_error = message
+            first_message = message
         finally:
             time.sleep(RETRY_PERIOD)
 
