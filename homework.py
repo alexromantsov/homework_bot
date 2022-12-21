@@ -95,7 +95,7 @@ def check_response(response):
         )
         raise IncorrectAnswerAPI(message)
     if not isinstance(response['current_date'], int):
-        raise TypeError('current_date не является числом.')
+        raise IncorrectAnswerAPI('current_date не является числом.')
     homeworks = response['homeworks']
     if not isinstance(homeworks, list):
         message = 'В ответе API домашки представлены не списком'
@@ -140,6 +140,7 @@ def main():
         try:
             response = get_api_answer(timestamp)
             homework = check_response(response)
+            timestamp = response['current_date']
             if len(homework) > 0:
                 message = parse_status(homework[0])
                 if message != first_message:
